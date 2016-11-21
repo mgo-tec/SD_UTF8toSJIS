@@ -1,6 +1,6 @@
 /*
   SD_UTF8toSJIS.cpp - for ESP-WROOM-02 ( esp8266 )
-  Beta version 1.0.1
+  Beta version 1.2
   This is a library for converting from UTF-8 code string to Shift_JIS code string.
   In advance, you need to upload a conversion table file Utf8Sjis.tbl using SD card & ESP-WROOM-02(ESP8266).
   
@@ -51,6 +51,9 @@ void SD_UTF8toSJIS::UTF8_to_SJIS_str_cnv(File f2, String strUTF8, uint8_t* sjis_
     if(strUTF8[fnt_cnt]>=0xC2 && strUTF8[fnt_cnt]<=0xD1){//2バイト文字
       SD_UTF8toSJIS::UTF8_To_SJIS_code_cnv(strUTF8[fnt_cnt],strUTF8[fnt_cnt+1],0x00, &sp_addres);
       SD_UTF8toSJIS::SD_Flash_UTF8SJIS_Table_Read(f2, sp_addres, SJ);
+			sjis_byte[sj_cnt] = SJ[0];
+      sjis_byte[sj_cnt+1] = SJ[1];
+			sj_cnt = sj_cnt + 2;
       fnt_cnt = fnt_cnt + 2;
     }else if(strUTF8[fnt_cnt]>=0xE2 && strUTF8[fnt_cnt]<=0xEF){
       SD_UTF8toSJIS::UTF8_To_SJIS_code_cnv(strUTF8[fnt_cnt],strUTF8[fnt_cnt+1],strUTF8[fnt_cnt+2], &sp_addres);
@@ -82,12 +85,12 @@ void SD_UTF8toSJIS::UTF8_to_SJIS_str_cnv(File f2, String strUTF8, uint8_t* sjis_
 //***********UTF-8コードをSD内の変換テーブルを読み出してShift-JISコードに変換****
 void SD_UTF8toSJIS::UTF8_To_SJIS_code_cnv(uint8_t utf8_1, uint8_t utf8_2, uint8_t utf8_3, uint32_t* SD_addrs)
 {
-  uint32_t UTF8uint = utf8_1*256*256 + utf8_2*256 + utf8_3;
-
   if(utf8_1>=0xC2 && utf8_1<=0xD1){
     //0xB0からS_JISコード実データ。0x00-0xAFまではライセンス文ヘッダ。
-    *SD_addrs = ((utf8_1*256 + utf8_2)-0xC2A2)*2 + 0xB0; //文字"¢" UTF8コード C2A2～、S_jisコード8191
+    *SD_addrs = ((utf8_1<<8 | utf8_2)-0xC2A2)*2 + 0xB0; //文字"¢" UTF8コード C2A2～、S_jisコード8191
   }else if(utf8_2>=0x80){
+		uint32_t UTF8uint = utf8_1<<16 | utf8_2<<8 | utf8_3;
+		
     if(utf8_1==0xE2){
       *SD_addrs = (UTF8uint-0xE28090)*2 + 0x1EEC; //文字"‐" UTF8コード E28090～、S_jisコード815D
     }else if(utf8_1==0xE3){
@@ -117,8 +120,7 @@ void SD_UTF8toSJIS::SD_Flash_UTF8SJIS_Table_Read(File ff, uint32_t addrs, uint8_
 {
   if(ff){
     ff.seek(addrs);
-    buf[0] = ff.read();
-    buf[1] = ff.read();
+		ff.read(buf, 2);
   }else{
     Serial.println(" UTF8toSjis file has not been uploaded to the flash in SD file system");
     delay(30000);
