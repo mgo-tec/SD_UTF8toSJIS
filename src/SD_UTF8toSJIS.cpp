@@ -1,6 +1,6 @@
 /*
   SD_UTF8toSJIS.cpp - for ESP-WROOM-02 ( esp8266 )
-  Beta version 1.2
+  Beta version 1.21
   This is a library for converting from UTF-8 code string to Shift_JIS code string.
   In advance, you need to upload a conversion table file Utf8Sjis.tbl using SD card & ESP-WROOM-02(ESP8266).
   
@@ -89,30 +89,42 @@ void SD_UTF8toSJIS::UTF8_To_SJIS_code_cnv(uint8_t utf8_1, uint8_t utf8_2, uint8_
     //0xB0からS_JISコード実データ。0x00-0xAFまではライセンス文ヘッダ。
     *SD_addrs = ((utf8_1<<8 | utf8_2)-0xC2A2)*2 + 0xB0; //文字"¢" UTF8コード C2A2～、S_jisコード8191
   }else if(utf8_2>=0x80){
-		uint32_t UTF8uint = utf8_1<<16 | utf8_2<<8 | utf8_3;
+		uint32_t UTF8uint = (utf8_1<<16) | (utf8_2<<8) | utf8_3;
 		
-    if(utf8_1==0xE2){
-      *SD_addrs = (UTF8uint-0xE28090)*2 + 0x1EEC; //文字"‐" UTF8コード E28090～、S_jisコード815D
-    }else if(utf8_1==0xE3){
-      *SD_addrs = (UTF8uint-0xE38080)*2 + 0x9DCC; //スペース UTF8コード E38080～、S_jisコード8140
-    }else if(utf8_1==0xE4){
-      *SD_addrs = (UTF8uint-0xE4B880)*2 + 0x11CCC; //文字"一" UTF8コード E4B880～、S_jisコード88EA
-    }else if(utf8_1==0xE5){
-      *SD_addrs = (UTF8uint-0xE58085)*2 + 0x12BCC; //文字"倅" UTF8コード E58085～、S_jisコード98E4
-    }else if(utf8_1==0xE6){
-      *SD_addrs = (UTF8uint-0xE6808E)*2 + 0x1AAC2; //文字"怎" UTF8コード E6808E～、S_jisコード9C83
-    }else if(utf8_1==0xE7){
-      *SD_addrs = (UTF8uint-0xE78081)*2 + 0x229A6; //文字"瀁" UTF8コード E78081～、S_jisコードE066
-    }else if(utf8_1==0xE8){
-      *SD_addrs = (UTF8uint-0xE88080)*2 + 0x2A8A4; //文字"耀" UTF8コード E88080～、S_jisコード9773
-    }else if(utf8_1==0xE9){
-      *SD_addrs = (UTF8uint-0xE98080)*2 + 0x327A4; //文字"退" UTF8コード E98080～、S_jisコード91DE
-    }else if(utf8_1>=0xEF && utf8_2>=0xBC){
-      *SD_addrs = (UTF8uint-0xEFBC81)*2 + 0x3A6A4; //文字"！" UTF8コード EFBC81～、S_jisコード8149
-      if(utf8_1==0xEF && utf8_2==0xBD && utf8_3==0x9E){
-        *SD_addrs = 0x3A8DE; // "～" UTF8コード EFBD9E、S_jisコード8160
-      }
-    }
+    switch(utf8_1){
+			case 0xE2:
+				*SD_addrs = (UTF8uint-0xE28090)*2 + 0x1EEC; //文字"‐" UTF8コード E28090～、S_jisコード815D
+				break;
+			case 0xE3:
+				*SD_addrs = (UTF8uint-0xE38080)*2 + 0x9DCC; //スペース UTF8コード E38080～、S_jisコード8140
+				break;
+			case 0xE4:
+				*SD_addrs = (UTF8uint-0xE4B880)*2 + 0x11CCC; //文字"一" UTF8コード E4B880～、S_jisコード88EA
+				break;
+			case 0xE5:
+				*SD_addrs = (UTF8uint-0xE58085)*2 + 0x12BCC; //文字"倅" UTF8コード E58085～、S_jisコード98E4
+				break;
+			case 0xE6:
+				*SD_addrs = (UTF8uint-0xE6808E)*2 + 0x1AAC2; //文字"怎" UTF8コード E6808E～、S_jisコード9C83
+				break;
+			case 0xE7:
+				*SD_addrs = (UTF8uint-0xE78081)*2 + 0x229A6; //文字"瀁" UTF8コード E78081～、S_jisコードE066
+				break;
+			case 0xE8:
+				*SD_addrs = (UTF8uint-0xE88080)*2 + 0x2A8A4; //文字"耀" UTF8コード E88080～、S_jisコード9773
+				break;
+			case 0xE9:
+				*SD_addrs = (UTF8uint-0xE98080)*2 + 0x327A4; //文字"退" UTF8コード E98080～、S_jisコード91DE
+				break;
+			default:
+				if(utf8_1>=0xEF && utf8_2>=0xBC){
+					*SD_addrs = (UTF8uint-0xEFBC81)*2 + 0x3A6A4; //文字"！" UTF8コード EFBC81～、S_jisコード8149
+					if(utf8_1==0xEF && utf8_2==0xBD && utf8_3==0x9E){
+						*SD_addrs = 0x3A8DE; // "～" UTF8コード EFBD9E、S_jisコード8160
+					}
+				}
+				break;
+		}
   } 
 }
 
